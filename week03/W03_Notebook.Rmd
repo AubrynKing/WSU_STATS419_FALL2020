@@ -1,0 +1,43 @@
+---
+title: "W03_WriteUP"
+author: "Aubryn King"
+date: "`r format(Sys.time(), '%d %B, %Y')`"  
+output:
+  html_document:
+    df_print: paged
+    fig_caption: true
+    number_sections: true
+    
+course: "STATS 419 Survey of Multivariate Analysis"
+instructor: "Monte J. Schaffer"
+email: "aubryn.king@wsu.edu"
+WSU ID: '11566056'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r WillV.Denzel}
+library(devtools) #necessary for source_url()
+GHLocalpath = "C:/gitfolder/WSU_STATS419_FALL2020/"
+#GHpath = "https://raw.githubusercontent.com/AubrynKing/WSU_STATS419_FALL2020"
+#source_url(paste0(GHpath, "functions/libraries.R")) #libraries
+source(paste0(GHLocalpath, "functions/functions-imdb.R")) #imdb
+source(paste0(GHLocalpath, "functions/libraries.R"), local = T) #no libraries? 
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+library(devtools)
+```

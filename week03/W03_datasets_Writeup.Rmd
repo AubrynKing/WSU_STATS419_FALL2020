@@ -1,10 +1,29 @@
 ---
-title: "Week 3 Assignment"
-author: "Aubryn King"
-date: "September 18, 2020"
+title: "Week 03 Datasets Revisited"
+author: "Aubryn E. King"
+date: "`r format(Sys.time(), '%d %B %Y')`"
 output:
+  pdf_document:
+    citation_package: natbib
+    latex_engine: pdflatex                      #what makes the pdf
+    template: ./../latex-templates/homework.tex #this is where it comes from
+    fig_caption: true
+    number_sections: true
   html_document:
     df_print: paged
+course: "STATS 419 Survey of Multivariate Analysis"
+course-short: STATS419
+instructor: Monte J. Shaffer
+
+
+
+
+email: aubryn.king@wsu.edu
+
+
+wsu-id: 11566056
+
+
 ---
 
 ```{r setup, include=FALSE}
@@ -17,8 +36,8 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r cars}
-summary(cars)
+```{r WillV.Denzel}
+
 ```
 
 ## Including Plots
@@ -27,6 +46,7 @@ You can also embed plots, for example:
 
 ```{r pressure, echo=FALSE}
 plot(pressure)
+library(devtools)
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
