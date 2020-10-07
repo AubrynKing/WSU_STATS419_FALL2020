@@ -536,7 +536,7 @@ You should read the "Vitrian Man" reading found in the Dropbox for this week.  T
 
 ```{r, chunck-correlation-measure-student}
 ## do some initial exploration of your measure-data 
-measure.aek = read.csv("http://md5.mshaffer.com/WSU_STATS419/measure-04343803d489fe8ee2c5f6ab97a101e9.txt", header=TRUE, sep="|");
+measure.aek = read.csv("https://raw.githubusercontent.com/AubrynKing/WSU_STATS419_FALL2020/master/Project1/measure-b7ae3660cd0f700f69ad759867c79192.txt", header=TRUE, sep="|");
 
 ## you should be thinking about "one" good research question for PROJECT 01 ... sub-questions may be appropriate.
 
