@@ -33,7 +33,7 @@ Variance measures the spread of a variable.  Consider the following three exampl
 library(humanVerseWSU); 
 # You need R tools for this to work:  https://cran.r-project.org/bin/windows/Rtools/
 # You may want to see if you have the latest version...
-#library(devtools);
+library(devtools);
 #detach(package:humanVerseWSU);
 install_github("MonteShaffer/humanVerseWSU/humanVerseWSU"); 
 # Choose (3) None to minimize headaches .... OOPS I chose yes
@@ -543,7 +543,69 @@ measure.aek = read.csv("https://raw.githubusercontent.com/AubrynKing/WSU_STATS41
 ## At the top-level of your "WSU_STATS419_FALL2020" repository add a folder "PROJECT-01" if you haven't done so yet.  Remember to only move "public-information" into that folder ... nothing private.  Private would be participant's names, passwords, and so on...
 
 ## maybe add a section to your 01_notebook in your project folder called # Correlation and perform the analyses there (or here or BOTH, it's up to you).
+head(measure.aek)
 
+getOne = c("hand.length", "hand.width", "hand.elbow", "elbow.armpit", "arm.reach", "foot.length", "floor.kneepit", "floor.hip", "floor.armpit");
+n.rows = dim(measure.aek)[1];
+
+
+for(one in getOne)
+  {
+  measure.aek[one] = NA;
+  }
+  
+for(i in 1:n.rows)
+  {  
+  measure.row = measure.aek[i,];
+  for(one in getOne)
+    {
+    nidx = getIndexOfDataFrameColumns(measure.aek, one);
+    
+    myleft = paste0(one,".left");
+      lidx = getIndexOfDataFrameColumns(measure.row, myleft);
+    myright = paste0(one,".right");
+      ridx = getIndexOfDataFrameColumns(measure.row, myleft);
+    
+      print(paste0(
+                  "left: ",myleft," --> ",lidx,
+                  " right: ",myright," --> ",ridx
+                  )
+            );
+      
+      row.m = mean(
+            c(as.numeric(unlist(measure.row[lidx])),
+            as.numeric(unlist(measure.row[ridx]))),
+            na.rm=TRUE);
+      
+    measure.aek[i,nidx] =  row.m;
+    }
+  }
+
+str(measure.aek);
+
+x = measure.aek$hand.length.left
+y = measure.aek$height.NA
+colnames(measure.aek)
+#plot(x, y, main = "Hand length(left) and height", xlab= "left hand length", ylab = "height")
+plot(measure.aek[, c("hand.length.left", "hand.width.left", "foot.length.left", "height.NA", "floor.hip.left", "floor.armpit.left", "hand.elbow", "arm.reach.left", "arm.span.NA")], col =ifelse(measure.aek$gender == 'F', "light blue", "green"), pch = 19) #c("dark green", "dark blue")[measure.aek$gender]) #[measure.aek$gender])
+
+colnames(measure.aek)
+
+
+measure = measure.aek[,c("head.height.NA", "hand.width.left", "elbow.armpit.left", "arm.span.NA", 
+                      "floor.kneepit.left", "floor.armpit.left", "floor.hip.left", "height.NA", 
+                      "age", "foot.length.left")]
+
+
+round( cor(measure), digits=2);
+plot(measure);
+    symnum( cor(measure), 
+            diag = TRUE,
+            corr = TRUE,
+            cutpoints=c(0.4,0.7,0.9), 
+            symbols = c(" ",".","*","**") 
+          ); 
+    corrplot::corrplot( (cor(measure)) ); 
 
 ```
 
@@ -622,6 +684,10 @@ cor(X,Y);  ## Getting closer
   Y = ( sample(X) - mean(X) ) / sd(X);
 cor(X,Y);  ## Getting closer
 
+  Y = (tan(X))
+cor(X,Y)
+  Y = (tan(X)/ sd(X))
+cor(X,Y)
 # build a Y that is a function of X such that correlation is 0.
 # it can be close to zero with isClose function
 # ?isClose
@@ -636,3 +702,6 @@ cor(X,Y);  ## Getting closer
 
 
 ```
+
+
+The closest to correlation =0 is Y= tan(x), which has a correlation of 0.147.

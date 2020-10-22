@@ -1,15 +1,26 @@
 ---
-title: 'R Notebook sandbox: Playing with Distance'
-output:
+title: "W05_Distance_WriteUP"
+author: "Aubryn King"
+email: "aubryn.king@wsu.edu"
+WSU ID: "11566056"
+course: "STATS 419 Survey of Multivariate Analysis"
+instructor: "Monte J. Schaffer"
+date: r format(Sys.time(), "%d %B, %Y")
+output: pdf_document
+  citation_package: natbib
+    latex_engine: pdflatex
+      template: ./../latex-templates/homework.tex
   html_document:
     df_print: paged
-    toc: true
-    toc_float: true
-    toc_depth: 4
-    fig_caption: true
-    number_sections: true
-my-var: "monte"  # https://bookdown.org/yihui/rmarkdown/html-document.html
+course: "STATS 419 Survey of Multivariate Analysis"
+course-short: STATS419
+instructor: Monte J. Shaffer
+email: WSU email HERE
+wsu-id: WSU ID HERE
+fig_caption: true
+number_sections: true
 ---
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE);
@@ -56,6 +67,7 @@ Note:  The WIKIPEDIA screenshot above explains that shortest time-distance may n
 
 # Chicago
 So let's start in the city of Chicago:
+
 
 ```{r, chunck-dist-chicago}
 
@@ -132,35 +144,7 @@ conv_unit(  distm( chicago[,2:1], fun=distHaversine),  "m", "mi"); # meters to m
 conv_unit(  distm( chicago[,2:1], fun=distMeeus),  "m", "mi"); # meters to miles
 conv_unit(  distm( chicago[,2:1], fun=distGeo),  "m", "mi"); # meters to miles
 
-## that's cool, but this is the end-all "crow-flies" distance formula ... not manhattan
-### [+5 Easter] Can you get the accuracy of Haversine working with manhattan
-### See https://stackoverflow.com/questions/32923363/manhattan-distance-for-two-geolocations
-
-# actually, longitude is a function of latitude
-# https://gis.stackexchange.com/questions/142326/calculating-longitude-length-in-miles
-# 
-# deg2rad = function(degrees)
-#   {
-#    degrees * (pi/180);
-#   }
-# rad2deg = function(radians )
-#   {
-#   radians * (180/pi);
-#   }
-# 
-# computeLongitudeFromLatitude = function(latitude)  # in decimal degrees
-#   {
-#   1 / ( 69.172 * cos(deg2rad(latitude)) );  
-#   }
-# 
-# chicago$y.lat2 = computeLongitudeFromLatitude(chicago$latitude);
-# 
-# chicago;
-# 
-# dist(chicago[,3,5], method="manhattan", diag=FALSE, upper=TRUE);
-
-
-```
+``` 
 
 # New York City area (e.g., Manhattan)
 So you do Manhattan:
@@ -191,12 +175,13 @@ nyc = as.data.frame( matrix( c(  nyc.timesquare.latlong,
   colnames(nyc) = c("latitude","longitude");
 
 nyc;
-plot(nyc$latMiles, nyc$longMiles)
+
 
 x.lat = nyc$latitude*latitude.factor
 y.long = nyc$longitude*longitude.factor
 nyc$latMiles = x.lat
 nyc$longMiles = y.long
+plot(nyc$latMiles, nyc$longMiles)
 
 options(digits = 3)
 distance(nyc[,3:4], method = "manhattan", diag= FALSE, upper = TRUE) #R is one based #spelled manhattAn
@@ -208,6 +193,8 @@ conv_unit(distm(nyc[,2:1], fun = distMeeus) , 'm', 'mi')
 conv_unit(distm(nyc[,2:1], fun = distGeo) , 'm', 'mi')
 
 ```
+
+
 In this RNotebook, write brief responses to the questions:
 
 ####  *Question 1:*  When would the "angle of rotation" for NYC matter to compute the Manhattan Distance?  namhatten distance: |x1−x2|+|y1−y2|
@@ -220,6 +207,7 @@ angle of rotation
 ####  *Question 2:*  How does Di Fara Pizza complicate things?  How would you really have to compute distance in this scenario (thing Google Maps "walking" or "driving directions")?
 
 De fara Pizza: 3rd from bottom
+I don't think that 
 
 ####  *Question 3:*  Which distance metric seems to be most conservative (overstating distance:  Manhattan, Euclidean, Haversine)?
 Manhatten distance is the most conservative. It makes sense becasue moving 
@@ -236,15 +224,10 @@ exact results" (https://cs.nyu.edu/visual/home/proj/tiger/gisfaq.html).
 
 
 # Store Locator
-I did some work for a company called 'organicgirl' a few years back.  We built a store locator as part of their brand presence online.  It was in production for about 8 years.  You can check out their "updated version" that doesn't full operate.
 
 The idea is that you input a ZIP code, we have a database that loosely maps that ZIP code to a latitude and longitude.  Then you query a database to find other entities (e.g., stores) within a given radius.
 
 Searching for a radius in a database is expensive.  So it is easier to search on a square.  After SQL gives you the result for a square, you manually compute the distances of each to the query input and reduce the result said to the circle (the inscribed circle in the square).
-
-So I created a SQL sandbox and have populated it with a table of ZIPCODES for the USA and CANADA.  It has 864,000 records (most are from CANADA oddly enough).  I removed CANADA, and I believe the US-data is intack.  About 42,000 records.
-
-To keep the database connection information "PRIVATE", please see the `_SECRET_.txt` file in the DROPBOX.  Run that code from the "console" of RStudio below, but DO NOT store in the RNotebook.  `_student_access__\unit_01_exploratory_data_analysis\week_05`
 
 ```{r, mychunk-store-location}
 # this is something you would never want public normally
@@ -345,11 +328,10 @@ conv_unit(ellipsicalSpheroidDistanceMatrix, 'm', 'mi')
 result.neighbors$distance = conv_unit(ellipsicalSpheroidDistanceMatrix[,6], 'm', 'mi')
 result.neighbors$incircle = result.neighbors$distance <= radius.miles
 result.neighbors = result.neighbors[-6,]
+result.neighbors
 ```
 
-#### TODO:  Take this information and you compute the pair-wise distances using the best Spherical Ellipsoid method.  Recall the focal zipcode (99163) are the distances we care about.  Add as column to the dataframe `result.neighbors$distance` with the appropriate values in miles.  Add another column `result.neighbors$incircle` which is TRUE/FALSE depending on the distance provided as the input.  Remove the specific row for the focal zipcode (99163) at the very end.
-
-#### TODO:  Choose a zipcode of your choice (not Pullman), and repeat everything above for that zipcode.
+#### Choose a zipcode of your choice (not Pullman), and repeat everything above for that zipcode.
 ```{r, neighbors-of-wenatchee}
 # this is something you would never want public normally
 # it is a sandbox, so let's give it a whirl ...
@@ -450,62 +432,3 @@ result.neighbors$distance = haversineDist[,1]
 result.neighbors$incircle = result.neighbors$distance <= radius.miles
 result.neighbors
 ```
-
-# String distances
-
-Distance can also be applied to strings, based on various methods.  For example, if I am typing the word `the`, I may accidently transpose some of `hte` characters.
-
-```{r,chunk-string-distance}
-
-library(RecordLinkage); # install.packages("RecordLinkage", dependencies=TRUE);
-w1.singular = "TRIANGLE";     
-w1.sorted.vec = sort( unlist(strsplit(w1.singular,"",fixed=TRUE)) );
-w1.sorted.vec;
-w1.sorted = paste0(w1.sorted.vec,collapse="");
-w1.sorted;
-
-w1 = "TRIANGLES";             sort( unlist(strsplit(w1,"",fixed=TRUE)) );
-w2 = "GNARLIEST";             sort( unlist(strsplit(w2,"",fixed=TRUE)) );
-w3 = "RESLATING";             sort( unlist(strsplit(w3,"",fixed=TRUE)) );
-
-# the number returned is bound between [0,1]
-jarowinkler(w1.singular, w1); #0.978 #triangle and triangles
-jarowinkler(w1.singular, w2); #0.694 #triangle and gnarliest
-jarowinkler(w1.singular, w3); #0.594 #triangle and reslating
-
-jarowinkler(w1, w2); #0.757 #triangles and gnarliest
-jarowinkler(w1, w3); #0.57 #triangles and reslating
-jarowinkler(w1, w1.sorted); # 0.594 #triangles and aegilnrt
-
-#############
-
-levenshteinSim(w1.singular, w1); #0.889 triangle and triangles
-levenshteinSim(w1.singular, w2); #0.111 triangle and gnarliest
-levenshteinSim(w1.singular, w3); #0.111 triangle and gmarliest
-levenshteinSim('gmarliest', 'gnarliest'); #0.889
-levenshteinSim('gwarliest', 'gnarliest'); #0.889
-
-levenshteinSim(w1, w2); #0.222 #triangles and gnarliest
-levenshteinSim(w1, w3); #0 triangles and reslating
-levenshteinSim(w1.singular, w2) #0.111 triangle and gnarliest
-levenshteinSim(w1.singular, w3) #0.111 triangle and reslating
-
-levenshteinDist(w1.singular, w1); #1 triangle and triangles
-levenshteinDist(w1.singular, w2); #8 triange and gnarliest
-levenshteinDist(w1.singular, w3); #8  triangle and reslating
-
-levenshteinDist(w1, w2); #7  triangles and gnarliest
-levenshteinDist(w1, w3); #9 triangles and reslating
-
-
-```
-
-
-#### Question:  What do you notice about w1, w2, w3 when we sort the characters that compose each string?  What is the term for this type of equality (e.g., `ant` and `tan` mixing up the same characters to form a new string that has its own meaning)? Is there a string function that would find such examples?
-
-They are anagrams. There is a function called is_anagram() from the package
-"chrisMuir/anagrams" that will find whether words are anagrams of each other.
-It only finds whether they are or are not anagrams, it does not return all anagrams 
-of a given word. 
-
-We will revisit string distances again.  This was just a brief introduction to the idea.

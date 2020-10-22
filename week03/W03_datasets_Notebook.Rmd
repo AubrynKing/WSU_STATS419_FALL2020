@@ -29,11 +29,489 @@ source(paste0(GHLocalpath, "functions/functions-imdb.R")) #imdb
 source(paste0(GHLocalpath, "functions/libraries.R"), local = T) #no libraries? 
 ```
 
-## Including Plots
 
 You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-library(devtools)
+```{r Iris, echo=FALSE}
+library(dplyr)
+data <- read.csv(file = 'iris.csv')
+
+x<- cbind(data) # cbind() rbind() sticks together vectors/rows as a matrix
+Sepal.Length <- data$sepal_length
+Sepal.Width <- data$sepal_width
+Petal.Length <- data$petal_length
+Petal.Width <- data$petal_width
+y<- cbind(Sepal.Length, Sepal.Width, Petal.Length, Petal.Width)
+
+
+label(data$sepal_width) <- "Sepal Width"
+label(data$petal_length) <- "Petal Length"
+label(data$petal_width) <- "Petal Width"
+
+#y<- cbind(data$sepal_length, data$sepal_width, data$petal_length, data$petal_width)
+plot(as.data.frame(y), pch = 21,  main = "Iris Data (red = setosa, green = versicolor, blue = virginica)", col = c("red", "dark green", "dark blue")[data$species]) #how to set the colors yourself 
+#circles aren't filled 
+#set colors: vector of the colors in order multiplied by the column: c("yellow", "blue", "pink")[data$species]
+
 ```
+
+
+
+```{r matrices}
+#matrices
+myMatrix = matrix ( c (
+  1, 0, 2,
+  0, 3, 0,
+  4, 0, 5
+), nrow=3, byrow=T);
+
+
+rotate90<- function(mat1) #works
+{
+  mat2<- matrix(nrow = ncol(mat1), ncol = 0)
+  for(i in 1:nrow(mat1)) 
+    {
+      mat2<- cbind(mat1[i,], mat2) 
+    }
+  mat2; 
+}
+
+rotate180 <- function(mat1) #works
+{
+  mat2 <- matrix(nrow= 0, ncol = ncol(mat1))
+  for(i in 1:nrow(mat1))
+  {
+    mat2<- rbind(mat1[i,], mat2)
+  }
+  mat2
+}
+
+rotate270<- function(mat1) #works
+{
+  mat2<- matrix(ncol = nrow(mat1), nrow =0)
+  for(i in 1:ncol(mat1)) #
+  {
+    mat2<- rbind(mat1[,i], mat2)
+ } 
+  mat2; # no keyword return in R
+}
+m2 <- matrix(c(4,2,6,3,5,8), ncol =2)
+rotate270(m2)
+
+
+#There is no error checking
+matrixMultiply <- function(mat1, mat2) # mxn * nxp = mxp
+{
+  m= nrow(mat1) 
+  n= ncol(mat1) 
+  p = ncol(mat2) #needed for loops and dimensions of result
+  result <- matrix(nrow = m, ncol = p)
+  for(i in 1:m) #rows of m1
+  {
+    #sum =0
+    for(j in 1:p) #cols m2
+    {
+    #print(mat2[,j])
+      sum =0
+      for(k in 1:n)
+      {
+        sum = sum+ mat1[i,k]*mat2[k,j]
+      }
+      result[i,j]= sum
+    } 
+  }
+  result
+}
+
+transpose <- function(mat1) #works
+{
+  mat2 <- matrix(nrow = ncol(mat1), ncol = nrow(mat1))
+  for(i in 1:ncol(mat1))
+  {
+    mat2[i,]<- mat1[,i]
+  }
+  mat2
+}
+m1 <- matrix(c(3,1,4), byrow = T, nrow =1)
+m2 <- matrix(c(4,2,6,3,5,8), ncol =2)
+#print(matrixMultiply(m1, m2))
+transpose(m2)
+
+myMatrix = matrix ( c (1, 0, 2,0, 3, 0,4, 0, 5), nrow=3, byrow=T)
+rotate90(myMatrix)
+rotate180(myMatrix)
+rotate270(myMatrix)
+matrixMultiply(myMatrix, m2)
+transpose(myMatrix)
+```
+
+
+```{r SummaryStats}
+
+#doMode(), doSummary(), doSampleVariance
+vec = c(4,3,5,6,7,4,4,1,0,34) #vector
+doMode<-function(vector)
+{
+  uniqv <- unique(vector)
+  uniqv[which.max(tabulate(match(vector, uniqv)))]
+}
+
+
+doSampleVariance<- function(vector)
+{
+  xBar = mean(vector)
+  summation = 0
+  for(x in vector){
+    summation = summation+ (x-xBar)^2
+  }
+  summation /(length(vector)-1)
+  
+}
+doSampleVariance(vec)
+var(vec)
+
+doSummary <- function(vector)
+{
+  
+}
+```
+
+```{r instructor-everything}
+
+df = read.table("personality-raw.txt", sep = '|', header = T)
+
+
+df<- subset(df, select = -c(V00)) #no quotes in subset, almost everywhere else yes
+
+#createtwo new columns from date_test: year and week 
+#date_test format: "5/9/2013 14:08"
+library(dplyr)
+df<- tidyr::separate(df, col = date_test, into = c("year", "week"), sep = " ")
+#change date into weeks: strftime(c("2014-03-16", "2014-03-17","2014-03-18", "2014-01-01"), format = "%V") outputs vector of week numbers 
+df$newyear <-strptime(df$year, "%m/%d/%Y") #posit class #forgot a slash and ruined my life
+
+format(df$newyear, "%Y/%m/%d")
+
+# extract year 
+df$year <- format(df$newyear, "%Y") # works, character class
+
+#week numbers, overwrites the time in column "week"
+df$week <- strftime(df$newyear, format = "%V") # acts weird around beginning/end of year, may be an off by one error
+
+#sort new df by year,week, so that newest are first
+df<- df[with (df, order(year, week)),]
+#remove duplicates using unique() on md5 email column
+dfClean <- df
+dfClean <- df[unique(df[,"md5_email"]),] #df[rows where the column email is unique, all columns]
+dfClean<- dfClean[with (dfClean, order(year, week)),] #dfClean not working
+#save pipe delimited format as personality-clean.txt
+write.table(df, "personality-clean.txt", sep = "|")
+#functions doSummary(), sampleVariance(), mode(), test on clean dataset and report findings
+
+sampleVariance <- function(x, method = "naive")
+{
+  if(method == "twoPass")
+  {
+    sVar=0
+    summation =0;
+    total =0;
+    n=0;
+    for(i in x)
+    {
+      total = total +i;
+      n= n+1;
+      
+    }
+    mean = total/n
+    for(i in x)
+    {
+        summation <- summation + (i-mean)**2 #R doesn't do += bc most objects are immutbale and instead of changing it you are making a changed copy then writing it over the first
+      }
+    sVar= summation/(n-1) #1 degree of freedom
+  }
+  
+  else
+  {
+    n=0; sum=0; sumSq=0;
+    for(i in x)
+    {
+        n=n+1;
+        sum = sum+i;
+        sumSq = sumSq + i**2;#sum of squares, not the sum squares
+    }
+    sVar =(sumSq - (sum**2/n)) / (n-1)
+  }
+  sVar #return
+}
+#x<-c(2,3,4,3,2,5,6,3,3,3)
+sv=0
+firstCol = which(colnames(dfClean)=="V01")
+lastCol = which(colnames(dfClean)=="V60")
+sampleVariance(as.vector(dfClean[6,firstCol:lastCol]))
+
+#monte.schaffer@gmail.com md5: b62c73cdaf59e0a13de495b84030734e
+#row = which(dfClean[,co]))
+
+
+dfTest<- df[ "md5_email" == "b62c73cdaf59e0a13de495b84030734e",]
+dfTest<- df[df["md5_email" == "b62c73cdaf59e0a13de495b84030734e",]] #something not right
+
+
+sampleVariance(dfClean[,dfTest ])
+
+##############################################
+# Actors
+##############################################
+# install.packages("stringr", dependencies=T);
+library(stringr);	
+# install.packages("rvest", dependencies=T);
+library(rvest);	
+
+# Research question:  who is a better actor?  Will Smith?  Denzel Washington?
+
+## actor ... person_id
+##			movie_id ... details
+##			name ... count movies
+
+# https://rvest.tidyverse.org/index.html
+
+## Denzel Washington [nm0000243] vs Will Smith [nm0000226]
+
+## https://www.imdb.com/filmosearch/?explore=title_type&role=nm0000243&ref_=filmo_ref_typ&sort=num_votes,desc&mode=detail&page=1&title_type=movie
+
+# R , javascript, php, (c/c++)
+
+# imdb ... 
+
+grabFilmInfoFromFilmsPage = function(page)
+{
+  # 50 elements
+  # # title = id = rank = year = rating = minutes = genre = votes = metascore = desc = millions
+  
+  movies = page %>%
+    html_nodes(".mode-detail");
+  
+  
+  
+  pagecount = length(movies);
+  
+  result = data.frame( 			matrix(ncol = 11,nrow = pagecount) );
+  # a matrix-type form with lots of NA values ...
+  
+  colnames(result) = c("rank", "title", "ttid", "year", "rated", "minutes", "genre", "ratings", "metacritic", "votes", "millions"); 
+  
+  
+  for(i in 1:pagecount)
+  {
+    movie = movies[i];
+    
+    rank = movie %>%
+      html_node(".lister-item-index") %>%
+      html_text() %>%
+      as.numeric();
+    result$rank[i] = rank;
+    
+    title = movie %>%
+      html_node(".lister-item-header a") %>%
+      html_text();
+    result$title[i] = title;
+    
+    ttid = movie %>%
+      html_node(".lister-item-header a") %>%
+      html_attr("href");
+    
+    temp = strsplit(ttid,"/",fixed=T);
+    ttid = temp[[1]][3];
+    result$ttid[i] = ttid;
+    
+    year = movie %>%
+      html_node(".lister-item-year") %>%
+      html_text();
+    year = cleanupYear(year);
+    result$year[i] = year;
+    
+    rated = movie %>%
+      html_node(".certificate") %>%
+      html_text();
+    result$rated[i] = rated;
+    
+    minutes = movie %>%
+      html_node(".runtime") %>%
+      html_text();
+    minutes = cleanupMinutes(minutes);
+    result$minutes[i] = minutes;		
+    
+    genre = movie %>%
+      html_node(".genre") %>%
+      html_text();
+    genre = str_trim(genre);
+    result$genre[i] = genre;
+    
+    ratings = movie %>%
+      html_node("div .rating-list") %>%
+      html_attr("title");
+    temp = strsplit(ratings,"/",fixed=T);
+    temp = gsub("Users rated this","",temp[[1]][1],fixed=T);	
+    temp = str_trim(temp);
+    ratings = as.numeric(temp);
+    result$ratings[i] = ratings;
+    
+    metacritic = movie %>%
+      html_node(".ratings-metascore span") %>%
+      html_text();
+    metacritic = as.numeric(str_trim(metacritic));
+    result$metacritic[i] = metacritic;
+    
+    # para ... +5 EASTER EGG ...
+    
+    info = movie %>%
+      html_nodes(".lister-item-content p span") %>%
+      html_text();
+    
+    votes = as.numeric(gsub(",","",info[8],fixed=T));
+    result$votes[i] = votes;
+    
+    millions = cleanupMillions(info[11]);
+    result$millions[i] = millions;			
+  }
+  
+  #str(result);
+  
+  result;
+}
+
+
+
+
+
+
+
+cleanupMillions = function(millions)
+{
+  millions = gsub('$','',millions, fixed=T);
+  millions = gsub('M','',millions, fixed=T);
+  
+  millions = as.numeric(millions);
+  millions;
+}
+
+cleanupMinutes = function(minutes)
+{
+  minutes = gsub('min','',minutes, fixed=T);
+  
+  minutes = as.numeric(minutes);
+  minutes;
+}
+
+cleanupYear = function(year)
+{
+  year = gsub('(','',year, fixed=T);
+  year = gsub(')','',year, fixed=T);
+  year = gsub('I','',year, fixed=T);
+  year = as.numeric(year);
+  year;
+}
+
+grabNameFromFilmsPage = function(page)
+{
+  name = page %>%
+    html_node(".header") %>%
+    html_text();
+  
+  name = gsub("Most Rated Feature Films With","",name,fixed=T);
+  name = str_trim(name);
+  
+  name;
+}
+
+
+grabFilmCountFromFilmsPage = function(page)
+{
+  totalcount = page %>%
+    html_nodes(".desc") %>%
+    html_text();
+  
+  temp = strsplit(totalcount,"of",fixed=T);
+  temp2 = strsplit(temp[[1]][2],"titles", fixed=T);
+  
+  totalcount = str_trim(temp2[[1]][1]);
+  totalcount = as.numeric(totalcount);
+  
+  temp2 = strsplit(temp[[1]][1],"to", fixed=T);
+  
+  pagecount = str_trim(temp2[[1]][2]);
+  pagecount = as.numeric(pagecount);
+  
+  result = list();
+  
+  result$totalcount = totalcount;
+  result$pagecount = pagecount;
+  
+  result;
+}
+
+
+#   nmid = "nm0000226";
+# 	will = grabFilmsForPerson(nmid);
+# 	plot(will$movies.50[,c(1,6,7:10)]);
+#  	boxplot(will$movies.50$millions);
+
+#   nmid = "nm0000243";
+# 	denzel = grabFilmsForPerson(nmid);
+# 	plot(denzel$movies.50[,c(1,6,7:10)]);
+#  	boxplot(denzel$movies.50$millions);
+
+
+# https://www.imdb.com/title/tt0466839/?ref_=filmo_li_tt ... get box office budget/gross if NA ... on millions. ..
+
+grabFilmsForPerson = function(nmid)
+{
+  result = list();
+  
+  url = paste("https://www.imdb.com/filmosearch/?explore=title_type&role=",nmid,"&ref_=filmo_ref_typ&sort=num_votes,desc&mode=detail&page=1&title_type=movie", sep="");
+  
+  page1 = read_html(url);
+  
+  ## useful for other data purposes
+  result$nmid = nmid;
+  
+  ## name of person
+  result$name = grabNameFromFilmsPage(page1);
+  result$countfilms = grabFilmCountFromFilmsPage(page1);
+  
+  result$movies.50 = grabFilmInfoFromFilmsPage(page1);
+  
+  
+  
+  
+  ##  parallel format ...
+  # ranks = page1 %>%
+  # html_nodes(".lister-item-index") %>%
+  # html_text() %>%
+  # as.numeric();	
+  
+  # ranks;
+  
+  # years = page1 %>%
+  # html_nodes(".lister-item-year") %>%
+  # html_text();
+  
+  # years = gsub('(','',years, fixed=T);
+  # years = gsub(')','',years, fixed=T);
+  # years = gsub('I','',years, fixed=T);
+  # years = as.numeric(years);
+  
+  # titles = page1 %>%	
+  # html_nodes(".lister-item-header a") %>%
+  # html_text();
+  
+  # titles;
+  
+  
+  result;
+}
+
+
+
+```
+

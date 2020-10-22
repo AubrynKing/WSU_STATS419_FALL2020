@@ -1,0 +1,396 @@
+---
+title: 'R Notebook sandbox: Playing with Hierarchical Clustering'
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '4'
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_float: yes
+    toc_depth: 4
+    fig_caption: yes
+    number_sections: yes
+my-var: monte
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE);
+knitr::opts_chunk$set(warning = FALSE);
+knitr::opts_chunk$set(message = FALSE);
+
+## this should knit, but I am running some IMDB stuff
+## so I wasn't able to verify a final Knit.
+## please let me know in the Discussion Board if you
+## find any errors, and I will fix
+```
+
+# Hierarchical Clustering
+
+We are now going to apply distance to aggregate multivariate data.  Recall that typically we refer to a data frame based on its rows and columns.  Generally, the rows represent observations and the columns represent features.
+
+As we try to aggregate data, we need to ask:  are we aggregating the rows or the columns?  Why?  So let's look at an example.
+
+## Data `protein`
+
+<http://www.dm.unibo.it/~simoncin/Protein.html>
+
+The following data, originated by A. Weber and cited in Hand et al. (1994, pp. 297), measure the amount of protein consumed for nine food groups in 25 European countries. The nine food groups are red meat (RedMeat), white meat (WhiteMeat), eggs (Eggs), milk (Milk), fish (Fish), cereal (Cereal), starch (Starch), nuts (Nuts), and fruits and vegetables (FruitVeg). Suppose you want to determine whether national figures in protein consumption can be used to determine certain types or categories of countries; specifically, you want to perform a cluster analysis to determine whether these 25 countries can be formed into groups suggested by the data.
+
+* Reference: Weber, A. (1973) Agrarpolitik im Spannungsfeld der internationalen Ernaehrungspolitik, Institut fuer Agrarpolitik und marktlehre, Kiel. Also found in: Gabriel, K.R. (1981) Biplot display of multivariate matrices for inspection of data and diagnosis. In Interpreting Multivariate Data (Ed. V. Barnett), New York: John Wiley & Sons, 147-173.
+
+* Hand, D.J., et al. (1994) A Handbook of Small Data Sets, London: Chapman & Hall, 297-298.
+
+
+```{r, chunck-load-protein}
+library(humanVerseWSU); 
+# You need R tools for this to work:  https://cran.r-project.org/bin/windows/Rtools/
+# You may want to see if you have the latest version...
+# library(devtools);
+# detach(package:humanVerseWSU);
+# install_github("MonteShaffer/humanVerseWSU/humanVerseWSU"); 
+# Choose (3) None to minimize headaches ....
+# library(humanVerseWSU);
+
+#example.datasets.path = "C:/Users/Alexander Nevsky/Dropbox/WSU-419/Fall 2020/__student_access__/sample_latex_files/Multivariate-2009/datasets/"; 
+example.datasets.path = "C:/gitfolder/WSU_STATS419_FALL2020/datasets/"
+
+# https://www.codebus.net/d-2oZ.html
+protein.file = paste0(example.datasets.path,"Protein/protein00.csv");
+protein = read.table(protein.file,  header = FALSE, sep = '\t');
+row = protein[1,];
+
+
+colnames(protein) = row;     #was removing the
+protein = protein[-c(1),];
+
+head(protein);
+
+
+
+# why would I do this? Make it pipe separated 
+protein.file2 = paste0(example.datasets.path,"pipe-format-protein.txt"); #make sure it is
+write.table( protein , file=protein.file2, quote=FALSE, col.names=TRUE, row.names=FALSE, sep="|");
+protein = read.csv(protein.file2, header=TRUE, quote="", sep="|");
+protein;
+
+# needs to be a matrix of numbers only
+X = removeColumnsFromDataFrame(protein,"Country"); 
+
+#round( dist( X ), digits=2);
+
+#round( cor( X ), digits=2);
+
+
+```
+
+### Should we take the transpose?
+
+So what do we want to aggregate?  Countries?  Or foods?  We can do either.
+
+```{r, chunck-transpose-protein}
+cols = colnames(protein);
+rows = protein$Country; #we already removed this in the previous chunk
+
+df = removeColumnsFromDataFrame(protein,"Country");
+df.t = transposeMatrix(df);
+colnames(df.t) = rows;
+print(colnames(df.t))
+
+protein.t = as.data.frame(df.t);
+protein.t;
+
+dist(protein.t);
+
+print(rows)
+
+#round( cor( protein.t ), digits=2);
+
+```
+
+### Distance function (e.g., Euclidean) needed for `hclust`
+
+Hierarchical Clustering uses the concept of dissimilarity (e.g., further distance is more dissimilar).  Let's try on an example.  Type `?hclust` for some basics on the usage.
+
+This is a nice video introduction <https://www.youtube.com/watch?v=7xHsRkOdVwo>
+
+This approach is a bit slow and has a complexity of $n^3$; as the size of the data gets bigger, this approach gets much slower.
+
+
+```{r, chunck-hclust-function}
+# 
+# # should we scale the data?
+# X = removeColumnsFromDataFrame(protein,"Country");
+# rownames(X) = protein$Country;
+# 
+# methods = c("complete", "average", "single", "median", "centroid", "ward.D", "ward.D2", "mcquitty");
+# 
+# for(method in methods)
+#   {
+#   time.start = Sys.time();  
+#       X.hclust = hclust( dist(X), method=method);
+#   plot(X.hclust, main = method);
+#   time.end = Sys.time();
+#   elapse = sprintf("%.3f", as.numeric(time.end) - as.numeric(time.start));
+#   print(paste0(elapse, " secs to complete method ... ", method));
+#   }
+# 
+
+
+
+```
+From above, would you conclude that Romania, Bulgaria, and Yugoslavia have similar `protein-eating` habits?  Any other clusters you can easily identify?  We call this unit `explorator data analysis` for a reason.  We try to visualize the data and articulate some initial findings.
+
+
+YES. In all methods Bulgaria and Yugoslavia were most similar, and Romania  was most similar to this cluster
+
+ANOTHER easily identified cluster is Norway, Denmark, Sweden. These three countries are in a cluster together in every method as well. 
+
+ANOTHER is UK, Belgium, France, the same reason as the other clusters.  
+
+```{r, chunck-pvclust-function}
+
+library(pvclust);  # install.packages("pvclust", dependencies=TRUE);
+
+# pvclust uses "bootstrapping" to analyze the stability of the hclust.  For some reason, you have to transpose the data inputs to still "cluster" by country.
+
+# nboot=1000 ... is it 1000 times slower?
+# r = seq(0.5,1.4,by=.1); # what proportion of the data should be used in the bootstrap
+
+## pvclust has a cores option to speed this up ... parallel = TURE
+
+ X = removeColumnsFromDataFrame(protein,"Country");
+ rownames(X) = protein$Country;
+
+methods = c("complete", "average", "single", "median", "centroid", "ward.D", "ward.D2", "mcquitty");
+for(method in methods)
+  {
+  time.start = Sys.time();  
+      # parallel=FALSE/TRUE ... try each on a run ... TRUE was about 8x faster for me ...
+      X.pvclust = pvclust ( protein.t, method.hclust=method, parallel=FALSE);  
+  plot(X.pvclust);
+      pvrect(X.pvclust);
+  time.end = Sys.time();
+  elapse = sprintf("%.3f", as.numeric(time.end) - as.numeric(time.start));
+  print(paste0(elapse, " secs to complete method ... ", method));
+  }
+
+# this will take awhile to Knit ... 
+```
+
+```{r, checks-and-experiments}
+  #     X2.pvclust = pvclust ( X2, method.hclust="centroid", parallel=FALSE);  
+  # plot(X2.pvclust);
+
+X.pvclust = pvclust ( protein, method.hclust="centroid", parallel=TRUE);
+  plot(X.pvclust);
+X.pvclust = pvclust ( protein.t, method.hclust="centroid", parallel=TRUE);
+  plot(X.pvclust);
+```
+
+
+The red box around certain dendograms represents a `best-guess` final answer.  In general, it appears there are two clusters on countries.  So although the individual `hclust` dendograms suggested maybe more refined cluster.
+
+The red numbers are called `au p-values` ... Would you conclude that Portugal appears to be an odd-country out?
+
+BP: The interpretation of this number is that this cluster would appear in -BP- runs of the bootstrap
+AU p- value: The unterpretation is about the same, but unbiases, and we should use this value a priori rather than 
+             BP.
+PORTUGAL: In the clustering with methods single, median, centroid, Portugal is in a cluter by itself.
+          It did not make it into the clusters. It also has a lower au p-value than the majority of the other 
+          countries for the methods that Portugal did make it into the cluster. In the McWitty method, Portugal had the 
+          lowest au p-value of all the countries in that cluster. 
+          Portugal is not consistently clustered with another country across methods like Romania, Bulgaria, Yugoslavia are. 
+          In some methods it is excluded from the cluster, others it is neatly fit into a cluster as if there is no anomaly. 
+          I would say that this means that Portugal is an anomoly for this reason. 
+```{r, scaled-X-pvclust}
+
+## pvclust has a cores option to speed this up ... parallel = TURE
+
+
+Xs = scale(X);
+for(method in methods)
+  {
+  time.start = Sys.time();  
+      # parallel=FALSE/TRUE ... try each on a run ... TRUE was about 8x faster for me ...
+      Xs.pvclust = pvclust ( protein.t, method.hclust=method, parallel=TRUE);  
+  plot(Xs.pvclust);
+      pvrect(Xs.pvclust);
+  time.end = Sys.time();
+  elapse = sprintf("%.3f", as.numeric(time.end) - as.numeric(time.start));
+  print(paste0(elapse, " secs to complete method ... ", method));
+}
+
+# this will take awhile to Knit ... 
+
+
+```
+
+
+#### Repeat above with a scaled X
+
+For the above examples, try scaling the data first.  That is, use `Xs = scale(X);`  
+
+Make some comments about the differences.  Before proceeding, make a decision on whether or not you plan on scaling the data.
+
+FROM what I can see, scaling didn't make any difference, except scale.  The clusters still look the same to me, 
+the bp and au p values still look the same to me. It scaled the height of the distance, and didn't do anything else. 
+I don't think there is a need to scale the data, especially because the data has more meaning unscaled, for example, eating a negative wuantity of meat doesn't make sense. 
+
+```{r, unscaled-aggregate-on-food}
+
+ X = removeColumnsFromDataFrame(protein,"Country"); #X is from protein- not transposed
+ rownames(X) = protein$Country;
+ #X2 = transposeMatrix(X) #RUnning this on the same data as before I it does it on a different axis. 
+
+
+methods = c("complete", "average", "single", "median", "centroid", "ward.D", "ward.D2", "mcquitty");
+for(method in methods)
+  {
+  time.start = Sys.time();  
+      # parallel=FALSE/TRUE ... try each on a run ... TRUE was about 8x faster for me ...
+      X.pvclust = pvclust ( protein, method.hclust=method, parallel=FALSE);  
+  plot(X.pvclust);
+      pvrect(X.pvclust);
+  time.end = Sys.time();
+  elapse = sprintf("%.3f", as.numeric(time.end) - as.numeric(time.start));
+  print(paste0(elapse, " secs to complete method ... ", method));
+}
+
+
+
+```
+
+
+#### Repeat above `hclust` and `pvclust` where the aggregation is on food types, not countries
+
+Now, you copy those two chunks and use the opposite data forms.  Where `protein` was used, you should use `protein.t` and vice versa.
+
+Are you using `X` or `Xs` to perform this analysis.
+
+--WRITE SOMETHING HERE--
+
+
+## Dataset `measure` (e.g., Project 1) 
+
+Would you want to cluster the "participants" or the "body parts"?  Why?
+
+
+I would want to cluster the participants. It is not useful to cluster a group of hand, or heights, 
+The measurememnts are characteristics of people, and it only makes sense to make groups of people, 
+not measurements
+
+Maybe do some `sandbox play` with your toy dataset.  We will get you the larger dataset soon.
+
+```{r, measure-sandbox-play}
+measure.path = "C:/gitfolder/WSU_STATS419_FALL2020/Project1/" #forward slashes
+measure.file.path = paste0(measure.path, "measure-b7ae3660cd0f700f69ad759867c79192.txt")
+
+measuredf = read.csv(measure.file.path, sep = '|', header = TRUE)
+head(measuredf)
+
+#measure.NumbericOnly = removeColumnsFromDataFrame(measuredf, "writing", "eye", "eye_color", "swinging", 
+                                                           
+drop = c("writing", "eye", "eye_color", "swinging", "gender", "quality", "ethnicity", "notes", "units", "side")
+
+measure.NumbericOnly <- subset(measuredf, select = -c(gender, quality, ethnicity, notes, units, side, writing, eye, eye_color, swinging, minutes, data_collector, floor.navel.NA, head.circumference.NA))
+
+rows = measure.NumbericOnly$person_id
+rows
+measure.NumericOnly.EachRowIsAPerson = subset(measure.NumbericOnly, select = -c(person_id))
+colnames(measure.NumericOnly.EachRowIsAPerson)
+
+head(measure.NumericOnly.EachRowIsAPerson)
+row.names(measure.NumericOnly.EachRowIsAPerson) = rows
+
+
+#pvclust clusters the columns
+#clustering the bodyparts
+
+methods = c("complete", "average", "single", "median", "centroid", "ward.D", "ward.D2", "mcquitty");
+for (method in methods){
+  measureAggBodyParts.pvclust = pvclust ( measure.NumericOnly.EachRowIsAPerson, method.hclust=method, parallel=TRUE); 
+  plot(measureAggBodyParts.pvclust);
+}
+```
+WHEN clustering by people, every person is in the same cluster, which I think there will be moreclusters
+when the datsets for the whole class are aggragated. 
+```{r, measure-Agg-People-Cluster}
+
+#clustering the people
+measure.NumericOnly.EachColumnIsAPerson = t(measure.NumericOnly.EachRowIsAPerson)
+# head(measure.NumericOnly.EachColumnIsAPerson)
+# colnames(measure.NumericOnly.EachColumnIsAPerson)
+# rownames(measure.NumericOnly.EachColumnIsAPerson)
+
+measureAggPeople.pvclust = pvclust ( measure.NumericOnly.EachColumnIsAPerson, method.hclust="centroid", parallel=TRUE); #
+  plot(measureAggPeople.pvclust);
+
+#clustering by people
+methods = c("complete", "average", "single", "median", "centroid", "ward.D", "ward.D2", "mcquitty");
+for (method in methods){
+  measureAggPeople.pvclust = pvclust ( measure.NumericOnly.EachColumnIsAPerson, method.hclust=method, parallel=TRUE); 
+  plot(measureAggPeople.pvclust);
+}
+```
+
+## Dataset `cars` 
+
+```{r, chunck-load-cars}
+
+# https://www.webpages.uidaho.edu/~stevel/519/Data/MBA_CAR.txt
+
+car.file = paste0(example.datasets.path,"/Cars/MBA_CAR_ATTRIB.txt");
+
+mba.cars = na.omit(read.table(car.file,na.strings='.'));
+
+myAttributes = c("Exciting", "Dependable", "Luxurious", 
+                  "Outdoorsy", "Powerful", "Stylish",
+                  "Comfortable", "Rugged", "Fun",
+                  "Safe", "Performance", "Family",
+                  "Versatile", "Sports", "Status",
+                  "Practical");
+
+
+myCars = c("BMW 328i","Ford Explorer","Infiniti J30","Jeep Grand Cherokee","Lexus ES300","Chrysler Town & Country", "Mercedes 280", "Saab 9000", "Porsche Boxter", "Volvo V90");
+
+
+car.ids = mba.cars$V2;
+mba.cars$V2 = factor(car.ids, labels=myCars);
+
+rownames(mba.cars) = mba.cars$V1;
+colnames(mba.cars) = c("ids","car",myAttributes);
+
+#cars.df = removeColumnsFromDataFrame(mba.cars, "ids"); #not connecting humanVerseWSU, changing this line to subset
+cars.df = subset(mba.cars, select = -c(ids))
+
+cars = mba.cars[,3:18];
+
+colnames(cars) = myAttributes;
+#rownames(cars) = car.ids;
+
+head(cars);
+
+# should we scale the data ... ?
+
+#X = transposeMatrix( cars );  #again, humanVerseWSU
+X= t(cars)
+Xs = scale(X);
+
+# it gets very slow if you don't organize correctly ...
+# hclust struggles with large datasets ...
+
+library(devtools);
+source_url("https://raw.githubusercontent.com/MonteShaffer/humanVerseWSU/master/humanVerseWSU/R/functions-EDA.R"); #install factoextra, psych
+
+X.hclust.info = perform.hclust(Xs, 8);
+str(X.hclust.info);
+
+```
+Use `hclust` and `pvclust` to aggregate `myAttributes`
+
+AFTER running the heirarchical cluster on attributes, the clusters that appeared are 
+versatile, family practical, versatile, safe, comfortable, dependable, rugged, outdoorsy, and 
+in the other cluster are sports, powerful, exciting, fun, performance, luxurious, stylish, status. 
+
+THE au p-values for the two clusters are 84 and 85
